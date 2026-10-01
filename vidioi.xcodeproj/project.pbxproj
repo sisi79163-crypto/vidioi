@@ -1,0 +1,32 @@
+// !$*UTF8*$!
+{ archiveVersion = 1; classes = {}; objectVersion = 56; objects = {
+05B9655A821E5AD5E4CF87E8 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "App/AIClient.swift"; sourceTree = "<group>"; };
+0FE208FE3181929414E9AEE7 = { isa = PBXBuildFile; fileRef = 05B9655A821E5AD5E4CF87E8; };
+9398CB40E69308A76531FD46 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "App/EditorStore.swift"; sourceTree = "<group>"; };
+E538EC74A2217EC7F914D0E6 = { isa = PBXBuildFile; fileRef = 9398CB40E69308A76531FD46; };
+BD3248944146E6709237F712 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "App/VidioiApp.swift"; sourceTree = "<group>"; };
+FF2213FDD88EEE3F03D6898D = { isa = PBXBuildFile; fileRef = BD3248944146E6709237F712; };
+C180BA7BD50110B5529FCC52 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Core/Project.swift"; sourceTree = "<group>"; };
+22403DAC63E54AE007A6BD54 = { isa = PBXBuildFile; fileRef = C180BA7BD50110B5529FCC52; };
+901CCEED8A3BEAFEE26C40F9 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Core/Subtitles.swift"; sourceTree = "<group>"; };
+B50F161000A78C8AF4425964 = { isa = PBXBuildFile; fileRef = 901CCEED8A3BEAFEE26C40F9; };
+DD1B0E0EE91D6858B19EC6EA = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Engine/RenderEngine.swift"; sourceTree = "<group>"; };
+1BA0FF443D73D3D4B5E71587 = { isa = PBXBuildFile; fileRef = DD1B0E0EE91D6858B19EC6EA; };
+06271BAF49532C879AA3C58B = { isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = App/Info.plist; sourceTree = "<group>"; };
+8BF729FFE074CAEE622C0292 = { isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = App/Assets.xcassets; sourceTree = "<group>"; };
+5522B3B3B2EACC1C8F9BEAAC = { isa = PBXBuildFile; fileRef = 8BF729FFE074CAEE622C0292; };
+A8792157CB4F27FB949C035F = { isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = vidioi.app; sourceTree = BUILT_PRODUCTS_DIR; };
+C8D2DC745BFC63C0D67231CE = { isa = PBXGroup; children = (05B9655A821E5AD5E4CF87E8, 9398CB40E69308A76531FD46, BD3248944146E6709237F712, C180BA7BD50110B5529FCC52, 901CCEED8A3BEAFEE26C40F9, DD1B0E0EE91D6858B19EC6EA, 06271BAF49532C879AA3C58B, 8BF729FFE074CAEE622C0292, 0A3E27B8CA818264D75C8D81); sourceTree = "<group>"; };
+0A3E27B8CA818264D75C8D81 = { isa = PBXGroup; children = (A8792157CB4F27FB949C035F); name = Products; sourceTree = "<group>"; };
+878A52FC5FF6A57D50B7B870 = { isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (0FE208FE3181929414E9AEE7, E538EC74A2217EC7F914D0E6, FF2213FDD88EEE3F03D6898D, 22403DAC63E54AE007A6BD54, B50F161000A78C8AF4425964, 1BA0FF443D73D3D4B5E71587); runOnlyForDeploymentPostprocessing = 0; };
+41D311A605520FC7B8B9A980 = { isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (5522B3B3B2EACC1C8F9BEAAC); runOnlyForDeploymentPostprocessing = 0; };
+E2AA269EB967A8853A258BFA = { isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+73EBF6644258C120893E685D = { isa = XCBuildConfiguration; buildSettings = { CLANG_ENABLE_MODULES = "YES"; CLANG_ENABLE_OBJC_ARC = "YES"; SDKROOT = "iphoneos"; IPHONEOS_DEPLOYMENT_TARGET = "17.0"; SWIFT_VERSION = "5.0"; SWIFT_OPTIMIZATION_LEVEL = "-Onone"; DEBUG_INFORMATION_FORMAT = "dwarf"; ENABLE_TESTABILITY = "YES"; }; name = Debug; };
+B00CCDD09424E369308D67FA = { isa = XCBuildConfiguration; buildSettings = { PRODUCT_NAME = "vidioi"; PRODUCT_BUNDLE_IDENTIFIER = "com.mostafa.vidioi"; INFOPLIST_FILE = "App/Info.plist"; GENERATE_INFOPLIST_FILE = "NO"; TARGETED_DEVICE_FAMILY = "1,2"; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; ASSETCATALOG_COMPILER_APPICON_NAME = "AppIcon"; CODE_SIGN_STYLE = "Automatic"; LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks"; SWIFT_EMIT_LOC_STRINGS = "YES"; CURRENT_PROJECT_VERSION = "1"; MARKETING_VERSION = "0.1.0"; }; name = Debug; };
+0B0C687DF8B6B8DC790B519C = { isa = XCBuildConfiguration; buildSettings = { CLANG_ENABLE_MODULES = "YES"; CLANG_ENABLE_OBJC_ARC = "YES"; SDKROOT = "iphoneos"; IPHONEOS_DEPLOYMENT_TARGET = "17.0"; SWIFT_VERSION = "5.0"; SWIFT_OPTIMIZATION_LEVEL = "-O"; DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym"; ENABLE_TESTABILITY = "NO"; }; name = Release; };
+1B104479E55E37CF8A63CBDF = { isa = XCBuildConfiguration; buildSettings = { PRODUCT_NAME = "vidioi"; PRODUCT_BUNDLE_IDENTIFIER = "com.mostafa.vidioi"; INFOPLIST_FILE = "App/Info.plist"; GENERATE_INFOPLIST_FILE = "NO"; TARGETED_DEVICE_FAMILY = "1,2"; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; ASSETCATALOG_COMPILER_APPICON_NAME = "AppIcon"; CODE_SIGN_STYLE = "Automatic"; LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks"; SWIFT_EMIT_LOC_STRINGS = "YES"; CURRENT_PROJECT_VERSION = "1"; MARKETING_VERSION = "0.1.0"; }; name = Release; };
+76F8DEC3DFE0BDB465198890 = { isa = XCConfigurationList; buildConfigurations = (73EBF6644258C120893E685D, 0B0C687DF8B6B8DC790B519C); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+06CB67C35A91E16DBD17B949 = { isa = XCConfigurationList; buildConfigurations = (B00CCDD09424E369308D67FA, 1B104479E55E37CF8A63CBDF); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+34A04005BCAF206EEC990BD9 = { isa = PBXNativeTarget; buildConfigurationList = 06CB67C35A91E16DBD17B949; buildPhases = (878A52FC5FF6A57D50B7B870, E2AA269EB967A8853A258BFA, 41D311A605520FC7B8B9A980); buildRules = (); dependencies = (); name = vidioi; productName = vidioi; productReference = A8792157CB4F27FB949C035F; productType = "com.apple.product-type.application"; };
+244210E48437B6556980A702 = { isa = PBXProject; attributes = { LastUpgradeCheck = 1600; }; buildConfigurationList = 76F8DEC3DFE0BDB465198890; compatibilityVersion = "Xcode 14.0"; developmentRegion = en; hasScannedForEncodings = 0; knownRegions = (en, ar, Base); mainGroup = C8D2DC745BFC63C0D67231CE; productRefGroup = 0A3E27B8CA818264D75C8D81; projectDirPath = ""; projectRoot = ""; targets = (34A04005BCAF206EEC990BD9); };
+}; rootObject = 244210E48437B6556980A702; }

@@ -1,0 +1,43 @@
+name: Build vidioi IPA
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  gateway-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node --test
+        working-directory: Server
+  ios:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test project model and edit commands
+        run: swift test
+      - name: Generate Xcode project
+        run: python3 scripts/generate_project.py
+      - name: Build unsigned iOS application
+        run: >-
+          xcodebuild -project vidioi.xcodeproj -scheme vidioi
+          -configuration Release -sdk iphoneos -destination 'generic/platform=iOS'
+          -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+      - name: Package IPA for external signing
+        run: |
+          mkdir -p build/package/Payload
+          cp -R build/Build/Products/Release-iphoneos/vidioi.app build/package/Payload/
+          cd build/package
+          zip -r ../vidioi-unsigned.ipa Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vidioi-unsigned-ipa
+          path: build/vidioi-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 14
