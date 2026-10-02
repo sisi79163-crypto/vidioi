@@ -37,6 +37,9 @@ struct StudioView: View {
                 }
                 SectionHeading(title: "مشاريعك", detail: "\(store.entries.count) PROJECTS")
                 if store.entries.count > 4 { HStack { Image(systemName: "magnifyingglass").foregroundStyle(VTheme.muted); TextField("ابحث عن مشروع", text: $search) }.padding(14).background(VTheme.surface, in: RoundedRectangle(cornerRadius: 14)) }
+                if projects.isEmpty {
+                    HStack(spacing: 15) { Image(systemName: "square.stack.3d.up").font(.system(size: 25, weight: .ultraLight)).foregroundStyle(VTheme.muted); VStack(alignment: .leading, spacing: 5) { Text("مساحة لقصتك القادمة").font(.system(size: 14, weight: .medium)); Text("مشاريعك تُحفظ تلقائيًا وتظهر هنا.").font(.system(size: 11)).foregroundStyle(VTheme.muted) }; Spacer() }.padding(20).background(VTheme.surface, in: RoundedRectangle(cornerRadius: 18))
+                }
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)], spacing: 22) {
                     ForEach(projects) { entry in
                         Button { store.open(entry.id); editor = true } label: { ProjectCard(entry: entry) }.buttonStyle(.plain)

@@ -74,3 +74,13 @@ test('rate limiting bounds repeated spending', async t => {
 test('gateway fails closed without a usable token', () => {
   assert.throws(() => createGateway({ token: '' })); assert.throws(() => createGateway({ token: 'short' }));
 });
+
+test('status endpoint is authenticated and never returns secrets', async t => {
+  const { url } = await gateway(t, undefined, { key: 'not-a-real-api-key' });
+  assert.equal((await fetch(url + '/v1/status')).status, 401);
+  const r = await fetch(url + '/v1/status', { headers: { authorization: 'Bearer test-token-with-enough-characters' } });
+  assert.equal(r.status, 200);
+  const body = await r.text();
+  assert.equal(JSON.parse(body).aiConfigured, true);
+  assert.equal(body.includes('not-a-real-api-key'), false);
+});

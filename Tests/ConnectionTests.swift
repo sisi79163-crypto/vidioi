@@ -55,3 +55,14 @@ final class ConnectionTests:XCTestCase {
         XCTAssertThrowsError(try stream.plan(for:EditProject()))
     }
 }
+
+extension ConnectionTests {
+    func testValidRSAIdentityAndTamperedSignature() throws {
+        let token = "eyJhbGciOiJSUzI1NiIsImtpZCI6InRlc3Qta2V5In0.eyJpc3MiOiJodHRwczovL2F1dGgub3BlbmFpLmNvbSIsImF1ZCI6InRlc3QtY2xpZW50Iiwic3ViIjoidmVyaWZpZWQtdXNlciIsImVtYWlsIjoidGVzdEBleGFtcGxlLmludmFsaWQiLCJub25jZSI6InRlc3Qtbm9uY2UiLCJpYXQiOjEwMDAwMDAwMDAsImV4cCI6NDEwMjQ0NDgwMH0.OwyLks-cQfQ8E1r0w_l0rdKulzpUtbroWHdrUmL73iQrIKA1RM6bDJnUiZgGAtGXJ3_dwXiGq5DwajGnNC8aLMFRg5tc38jl2dS8oItmpbT8xIta19lf5bY0lP6ay72qpnNW27jkSVm-ubKE0IEPsqkKfDIkFCQM-CF3A8EN9nETskaiXiwjKjrRcF7iTA7OWNt2EO32lN1XYD7deRyfW0mSI3Urtf1UJi4X6D6psG0qtKzjzW-ozWmcgRyqNUZpR63-1poEIUHvSRXZp-bbL5xrxBImCwBKfdpZR6e868eHnt8JKPyDsLvWQUsQMtHSeXS_UTTJw8CcLLwspn0B2g"
+        let jwks = Data(#"{"keys":[{"kty":"RSA","kid":"test-key","alg":"RS256","use":"sig","n":"nI2ZU1IDdtALMkfWGDWtgZ7zJhAtQi66STe-i8UmuY4VBtiwjAYpg03Dn7Cr0wNmw-BzH0ddlfXayVLMxpCUXd6989WH5XsTlToAEAns5wRSWtJl_hNInt7xSGKCb-ma8YEck4zQqS8yJGTBcA7-_-JbZqBqTe9w89uWNdlXt0KkPGJJ3z4BkOP0oZgid2H4_VsO_QRWvWqqIxWlPAzzCFQady1ErLgk_iJ65O97m4cmMjk4iALeCY9wTGmhjzUcTBqHBV93oUtYw3ILTlbNpm83-7sO92n72x5v9oE5Gekd4Ta0jrWvFKhVqiWUwfgvXEtijk0Lrx31_8kikKxFRQ","e":"AQAB"}]}"#.utf8)
+        XCTAssertEqual(try OAuthContract.verifyIDToken(token,jwks:jwks,clientID:"test-client",nonce:"test-nonce").subject,"verified-user")
+        var parts=token.split(separator:".").map(String.init)
+        parts[1]=OAuthContract.base64URL(Data(#"{"sub":"attacker"}"#.utf8))
+        XCTAssertThrowsError(try OAuthContract.verifyIDToken(parts.joined(separator:"."),jwks:jwks,clientID:"test-client",nonce:"test-nonce"))
+    }
+}

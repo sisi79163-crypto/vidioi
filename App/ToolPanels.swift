@@ -103,6 +103,7 @@ struct MotionPreview:View {
             .opacity(motion == .fade && !animate ? 0.2 : 1)
             .offset(x:motion == .slide && !animate ? -23 : 0)
             .onAppear { if !reduceMotion { withAnimation(.easeInOut(duration:1.2).repeatForever(autoreverses:true)) {animate=true} } }
+    }
 }
 struct TitleStudio:View {
     @EnvironmentObject var store:EditorStore

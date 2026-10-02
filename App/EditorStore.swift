@@ -51,6 +51,7 @@ struct ProjectEntry: Identifiable {
         entries = ((try? FileManager.default.contentsOfDirectory(at: root, includingPropertiesForKeys: [.contentModificationDateKey])) ?? []).compactMap { folder in
             guard let data = try? Data(contentsOf: folder.appendingPathComponent("project.json")),
                   let p = try? JSONDecoder().decode(EditProject.self, from: data) else { return nil }
+            guard !p.clips.isEmpty else { return nil }
             let date = (try? folder.appendingPathComponent("project.json").resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
             let cover = p.clips.first { $0.kind == .video || $0.kind == .image }.flatMap { $0.asset }.map { folder.appendingPathComponent("Assets").appendingPathComponent($0) }
             return ProjectEntry(id: p.id, title: p.title, updated: date, duration: p.length, coverURL: cover)

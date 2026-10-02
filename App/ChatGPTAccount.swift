@@ -90,6 +90,7 @@ struct AccountModel:Identifiable,Codable {var id:String;var name:String}
         }}
     }
     private func complete(code:String,client:String,redirect:URL) async {
+        let attempt=pendingState
         do {
             let token=try await tokenRequest(["grant_type":"authorization_code","client_id":client,"code":code,"code_verifier":verifier,"redirect_uri":redirect.absoluteString,"resource":OAuthContract.resource])
             guard let idToken=token["id_token"] as? String else {throw EditError.invalid("رمز الهوية مفقود")}
@@ -98,6 +99,7 @@ struct AccountModel:Identifiable,Codable {var id:String;var name:String}
             let identity=try OAuthContract.verifyIDToken(idToken,jwks:jwks,clientID:client,nonce:nonce)
             if let previous=session,previous.subject != identity.subject {throw EditError.invalid("الحساب مختلف. سجّل الخروج أولًا لإضافة حساب آخر.")}
             let record=try makeSession(token,client:client,identity:identity,idToken:idToken)
+            guard connecting,pendingState==attempt else{return}
             try save(record);stopAttempt();message="تم تسجيل الدخول";try await loadModels()
         } catch {fail(error.localizedDescription)}
     }
@@ -119,6 +121,8 @@ struct AccountModel:Identifiable,Codable {var id:String;var name:String}
             record.accessToken=access;record.refreshToken=refresh;record.expiresAt=Date().addingTimeInterval(lifetime)
             if let scopes=token["scope"] as? String {record.scopes=scopes}
             guard record.scopes.split(separator:" ").contains("chatgpt.tokens.use.direct") else {throw EditError.invalid("الحساب لم يمنح صلاحية استخدام الخطة")}
+            try Task.checkCancellation()
+            guard self.session?.subject==session.subject,self.session?.clientID==session.clientID else {throw EditError.invalid("تغيّر الحساب أثناء التجديد")}
             try self.save(record);return record
         }
         refreshTask=task;defer{refreshTask=nil}
