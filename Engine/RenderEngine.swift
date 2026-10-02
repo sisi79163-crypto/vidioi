@@ -145,9 +145,13 @@ enum RenderEngine {
                 audioParameters.append(params)
             }
         }
-        // Empty video track makes title-only and image-only projects renderable.
-        let clock = composition.addMutableTrack(withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid)
-        clock?.insertEmptyTimeRange(CMTimeRange(start: .zero, duration: time(project.length)))
+        let clockAsset = AVURLAsset(url: try await RenderClock.shared.source())
+        guard let clockSource = try await clockAsset.loadTracks(withMediaType: .video).first,
+              let clockTrack = composition.addMutableTrack(withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid) else {throw EditError.invalid("تعذّر إنشاء مسار التصدير")}
+        let clockRange = CMTimeRange(start: .zero, duration: time(1))
+        try clockTrack.insertTimeRange(clockRange, of: clockSource, at: .zero)
+        clockTrack.scaleTimeRange(clockRange, toDuration: time(project.length))
+        map[UUID()] = clockTrack.trackID
         let video = AVMutableVideoComposition()
         video.customVideoCompositorClass = LayerCompositor.self
         video.renderSize = CGSize(width: CGFloat(project.width), height: CGFloat(project.height))
@@ -185,5 +189,43 @@ enum RenderEngine {
             text.draw(with: CGRect(x: 16, y: 16, width: maxWidth, height: size.height - 32), options: [.usesLineFragmentOrigin, .usesFontLeading], context: nil)
         }
         return CIImage(image: image)
+    }
+}
+
+// AVFoundation needs a real timed video source even for still/title-only projects.
+// A tiny black source drives the compositor; it is never shown as a project layer.
+actor RenderClock {
+    static let shared = RenderClock()
+    private var cached: URL?
+    func source() async throws -> URL {
+        if let cached,FileManager.default.fileExists(atPath:cached.path) {return cached}
+        let url=FileManager.default.temporaryDirectory.appendingPathComponent("vidioi-clock-\(UUID().uuidString).mp4")
+        let writer=try AVAssetWriter(outputURL:url,fileType:.mp4)
+        let input=AVAssetWriterInput(mediaType:.video,outputSettings:[AVVideoCodecKey:AVVideoCodecType.h264,AVVideoWidthKey:16,AVVideoHeightKey:16])
+        input.expectsMediaDataInRealTime=false
+        let adaptor=AVAssetWriterInputPixelBufferAdaptor(assetWriterInput:input,sourcePixelBufferAttributes:[kCVPixelBufferPixelFormatTypeKey as String:kCVPixelFormatType_32BGRA,kCVPixelBufferWidthKey as String:16,kCVPixelBufferHeightKey as String:16])
+        guard writer.canAdd(input) else {throw EditError.invalid("تعذّر تجهيز مصدر التصدير")}
+        writer.add(input)
+        guard writer.startWriting() else {throw writer.error ?? EditError.invalid("تعذّر تجهيز التصدير")}
+        writer.startSession(atSourceTime:.zero)
+        do {
+            var buffer:CVPixelBuffer?
+            guard CVPixelBufferCreate(kCFAllocatorDefault,16,16,kCVPixelFormatType_32BGRA,nil,&buffer)==kCVReturnSuccess,let buffer else {throw EditError.invalid("ذاكرة الفيديو غير متاحة")}
+            CVPixelBufferLockBaseAddress(buffer,[])
+            if let base=CVPixelBufferGetBaseAddress(buffer) {memset(base,0,CVPixelBufferGetDataSize(buffer))}
+            CVPixelBufferUnlockBaseAddress(buffer,[])
+            for frame in 0..<30 {
+                var waits=0
+                while !input.isReadyForMoreMediaData {
+                    guard writer.status == .writing,waits<1000 else {throw writer.error ?? EditError.invalid("انتهت مهلة إعداد التصدير")}
+                    try await Task.sleep(nanoseconds:10_000_000);waits += 1
+                }
+                guard adaptor.append(buffer,withPresentationTime:CMTime(value:Int64(frame),timescale:30)) else {throw writer.error ?? EditError.invalid("تعذّر تجهيز إطار")}
+            }
+            input.markAsFinished();writer.endSession(atSourceTime:CMTime(seconds:1,preferredTimescale:30))
+            await writer.finishWriting()
+            guard writer.status == .completed else {throw writer.error ?? EditError.invalid("تعذّر تجهيز ملف التصدير")}
+            cached=url;return url
+        } catch {writer.cancelWriting();try? FileManager.default.removeItem(at:url);throw error}
     }
 }

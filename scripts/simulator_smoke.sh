@@ -18,6 +18,8 @@ for attempt in $(seq 1 30); do
   if [ -f "$APP_DATA/Documents/smoke-result.json" ]; then break; fi
   sleep 3
 done
+sleep 3
+xcrun simctl io "$DEVICE" screenshot build/screenshots/editor.png
 cp "$APP_DATA/Documents/smoke-result.json" build/screenshots/render-result.json
 python3 - "$APP_DATA/Documents/smoke-result.json" <<'PY'
 import json,sys,os

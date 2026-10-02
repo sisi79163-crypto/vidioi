@@ -1,38 +1,42 @@
-# vidioi
+# vidioi 0.2
 
-Native iPhone/iPad video editor with Arabic typography, layered media, keyframe animation, and an optional OpenAI editing assistant. This is a first implementation (0.1.0), not a finished DaVinci-equivalent product.
+Native iPhone/iPad video editing with a redesigned dark studio, a layered timeline, Arabic titles, motion controls and a ChatGPT editing assistant.
 
-## Implemented
+## What changed in 0.2
 
-- Local projects with atomic JSON saves, project library, 50-step undo/redo.
-- Import video, audio, images/transparent PNG, TTF/OTF fonts, SRT captions, and JSON edit plans from Files.
-- Sequential video import; up to 32 visual/audio lanes and overlapping layers.
-- Source trims, timeline position, duration, speed 0.25–4×, volume, split and duplicate.
-- Arabic/multiline text, fonts, red/gold/white/mint color presets, editable font size.
-- Position, scale, horizontal stretch, rotation, opacity; eased keyframes and fade/pop/slide entrance presets.
-- Brightness, contrast, saturation for video and images.
-- Shared custom AVFoundation/Core Image compositor for preview and MP4 export. 9:16, 16:9, square and 2160×3840 export settings; 24/25/30/60 FPS.
-- AI assistant prepares a bounded JSON edit plan. Preview the plan before applying; undo it afterward.
-- Server-side OpenAI key, device Keychain gateway token, authenticated requests, request limits, schema/semantic validation, no source-media upload.
+- New charcoal/lime design system, studio dashboard, project cover images, empty state and updated app icon.
+- Large clean AVPlayer canvas without overlapping player controls. Contextual tool sheets keep the editor uncluttered.
+- Timeline scrubbing, zoom, moving clips and edge trimming. Clip thumbnails use real imported media.
+- Arabic title presets, color controls, motion previews and keyframe editing.
+- Import media from Photos as well as Files. Imported assets remain local.
+- Dedicated export sheet for 1080p/4K, frame rate, progress state and sharing.
+- **Continue with ChatGPT** using OpenAI's documented public-client dynamic registration flow: PKCE, state/nonce, a loopback callback, RSA signature validation and Keychain storage.
+- Model picker populated from the signed-in account; streamed Responses requests must reach a completed event before any edit plan can be applied.
+- Optional self-hosted OpenAI API gateway remains available, with an authenticated status test.
 
-## Current verification status
+## Connect ChatGPT
 
-GitHub Actions successfully built the arm64 iOS application on 2026-10-02. All 9 Swift core tests and 11 gateway tests passed. The unsigned IPA was packaged and uploaded in [build run 36943710049](https://github.com/sisi79163-crypto/vidioi/actions/runs/36943710049), from source commit `3f7527f9ce314c924c698f4c8e555ab301954bda`.
+Open the profile button in the studio or **AI → اتصال** in the editor. Select ChatGPT, press **Continue with ChatGPT**, then complete OpenAI's sign-in and consent screen. The app requests permission to use eligible ChatGPT plan usage and retrieves the models available to the account. Select a model and request an edit.
 
-The native app has not been launched or export-tested on a physical iPhone or simulator yet. The build uses Swift 5 language mode and reports Swift 6 sendability migration warnings in the custom compositor; these do not fail this build.
+This uses the documented preview flow for open-source clients. Availability is controlled by OpenAI and the user's account/workspace. The app has no access to prior ChatGPT conversations. No API key is embedded in the application. Successful live account consent and inference still require testing on the user's device; compilation and contract tests alone do not prove account eligibility or native loopback callback support in every iOS environment.
 
-An API key and deployed HTTPS gateway are not configured. Real AI requests have not been tested. The app works as a local editor without an AI connection; imported JSON plans provide an offline assistant bridge.
+For an existing API deployment, choose **خادم API**, enter the HTTPS gateway base URL and its app token, then test the connection. Keep `OPENAI_API_KEY` on that server. `Server/.env.example` and `Server/Dockerfile` are included. The status test verifies authentication/configuration, not a billed inference request. No API gateway is deployed by this repository.
 
-## Build on GitHub
+## Edit with the assistant
 
-1. Create a repository named `vidioi` with branch `main`, then upload this folder's contents, including `.github/workflows/build-ios.yml`.
-2. Open **Actions → Build vidioi IPA**. A push to `main` triggers the workflow; it can also be run manually.
-3. Once tests and the native build succeed, download **vidioi-unsigned-ipa** from the run's artifacts. The archive contains `vidioi-unsigned.ipa`.
-4. Sign and install the IPA using SideStore or an Apple development signing workflow. The produced IPA is unsigned, not directly installable. SideStore/device pairing and signing are external steps.
+The assistant receives the instruction and project metadata/text, not source video or audio. It proposes only supported timeline operations. Review the plan, apply it, or reject it; applied changes can be undone. Request generation is cancellable, and changing the project before a response arrives invalidates that response. The assistant does not automatically transcribe speech or generate video.
 
-No paid third-party editing SDK or XcodeGen is required. GitHub runner availability and account build minutes depend on the account.
+Examples:
 
-## Build on a Mac
+- “اجعل أول عنوان أحمر مع حركة Pop، ولا تغيّر الكلمات.”
+- “خفّض تشبع الفيديو وزد التباين قليلًا.”
+- “أضف عبارة احفظ الفيديو في الثانية 20 لمدة ثانيتين.”
+
+## Build
+
+GitHub Actions runs the Node gateway tests, Swift model/OAuth/stream contract tests, an iOS device build, a simulator build and UI/export smoke checks. Artifacts include the unsigned IPA and actual simulator screenshots. Use the latest successful run under [Actions](https://github.com/sisi79163-crypto/vidioi/actions).
+
+On a Mac:
 
 ```sh
 python3 scripts/generate_project.py
@@ -40,60 +44,26 @@ swift test
 open vidioi.xcodeproj
 ```
 
-Select a signing team and your device in Xcode. Deployment target: iOS 17. Project files are also included and can be opened without generating again.
+Target: iOS 17+. Bundle ID: `com.mostafa.vidioi`. Sign using Xcode or SideStore; the CI IPA is unsigned. Native smoke tests use `--screenshot-editor`, `--screenshot-motion`, `--screenshot-ai` and `--render-smoke` launch arguments; normal use does not create the generated test project.
 
-## Connect the AI assistant
+## Editing capabilities and current limits
 
-The connection uses OpenAI's Responses API; it does not attach this ChatGPT session or reuse its subscription. Set up API billing separately. Only the prompt and project metadata/text are sent; the assistant cannot hear source clips or transcribe them through this endpoint.
+Supported: up to 32 lanes, clips with independent source/timeline trims, 0.25–4× speed, audio volume, split/duplicate, opacity/position/scale/stretch/rotation keyframes, Arabic/multiline text, imported fonts and SRT, brightness/contrast/saturation, and MP4 export. Projects autosave with undo/redo history during the session.
 
-```sh
-cd Server
-cp .env.example .env
-```
+Not implemented: subject segmentation, object tracking, automatic transcription, 3D LUTs, arbitrary executable plugins, nested timelines, advanced audio mastering or generated media. 4K and large projects still need real-device performance testing. Imported JSON files are edit plans; exporting project metadata alone does not include source media. The app is an evolving editor, not feature-equivalent to DaVinci Resolve.
 
-Fill `OPENAI_API_KEY`, `OPENAI_MODEL`, and a random `VIDIOI_TOKEN` of at least 16 characters. Never commit `.env` or place the OpenAI key in the IPA. Then:
+## Security and verification
 
-```sh
-npm test
-npm start
-```
-
-Deploy the gateway behind HTTPS (the Dockerfile is included). In the app's settings, enter the HTTPS base URL and the gateway token. The app appends `/v1/edit`. No gateway has been deployed with this deliverable.
-
-The gateway returns a reviewable edit plan and cannot execute code, access local files, or download arbitrary URLs. It rejects unknown clip IDs, bad keyframes, paths and values. The current token model is for a personal app, not a public multiuser service.
-
-Example request: “اجعل النص الأول أحمر مع حركة pop، وأضف عبارة احفظ الفيديو في الثانية 20 لمدة ثانيتين”. Actual media duration bounds are additionally checked by the native render engine.
-
-## Using your own assets
-
-Import from Files. Files are copied into the project sandbox. Import fonts before selecting them. Import an SRT containing word-level timings to animate each timed word; this version does not automatically derive word timing from speech. Use a separate text layer for highlighted red words. Project assets are also accessible through iOS Files app under vidioi when file sharing is available.
-
-Sharing `project.json` shares metadata only. It is not a portable full-media project archive. Keep the project folder and its `Assets` directory together for backups. Importing JSON through the app currently imports edit plans, not complete projects.
-
-## Limits and next development work
-
-- No subject segmentation/masking, tracking, automatic transcription, audio cleanup, 3D LUT importer, arbitrary effect plugins, nested compositions or automatic scene detection yet.
-- No video generation, stock asset downloads, full DaVinci color tools or Fusion node editor.
-- No transition overlap controls; media cuts are hard cuts. Motion presets apply to layer opacity/position/scale.
-- Fonts and other imported files are copied; failed batch imports can leave unused asset files until the project folder is cleaned. There is no asset garbage collection or project delete UI yet.
-- Sliders produce individual undo steps. Frame caches/proxies, drag trimming, thumbnail/waveform generation and optimized 4K memory use remain development work.
-- HDR input is currently rendered to SDR; variable-frame-rate and unsupported codecs must be tested on device. Source-audio pitch preservation is not implemented for speed changes.
-- Device performance limits 4K and overlapping tracks. Image-only/title-only/audio-only compositions require particular on-device smoke testing.
-
-## Source layout
-
-`Core/` — project codec, interpolation, subtitle parser, atomic edit plans.
-
-`Engine/` — composition builder, media timing/audio mix, custom frame renderer, exporter.
-
-`App/` — SwiftUI editor, timeline, inspector, motion, project storage, Keychain and assistant UI.
-
-`Server/` — dependency-free Node gateway, Responses integration, validation and tests.
-
-`Tests/` — Swift core tests; `scripts/` — deterministic Xcode generation; `.github/workflows/` — macOS build/IPA packaging.
+- OAuth tokens are stored as one atomic Keychain record. No credentials are committed or logged.
+- Callback checks bind state, issued client ID, exact loopback path and port. ID-token validation checks RSA signature, issuer, audience, expiry, subject and nonce.
+- Account renewal cannot overwrite a signed-out/switched account. No private ChatGPT backend endpoints are used.
+- Authentication and inference tests use local cryptographic fixtures and simulated events; they do not authenticate a real user.
+- The gateway authenticates every edit/status request, bounds body size/rate and validates all edit commands.
 
 ## References
 
-- [OpenAI Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs)
+- [OpenAI registration and sign-in](https://developers.openai.com/siwc/token-sharing-open-source/sign-in)
+- [Models and inference](https://developers.openai.com/siwc/token-sharing-open-source/models-and-inference)
+- [Preview limitations](https://developers.openai.com/siwc/token-sharing-open-source/preview-limitations)
+- [Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs)
 - [Apple AVVideoCompositing](https://developer.apple.com/documentation/avfoundation/avvideocompositing)
-- [GitHub workflow artifacts](https://docs.github.com/en/actions/concepts/workflows-and-actions/workflow-artifacts)

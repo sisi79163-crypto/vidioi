@@ -234,7 +234,7 @@ struct ProjectEntry: Identifiable {
     func export() async {
         guard !isBusy, !project.clips.isEmpty else { return }
         isBusy = true; status = "تصدير الفيديو"; player.pause(); previewTask?.cancel()
-        defer { isBusy = false; status = "" }
+        defer { isBusy = false; status = ""; schedulePreview() }
         do {
             let product = try await RenderEngine.build(project, assets: assets)
             let folder = directory.appendingPathComponent("Exports", isDirectory: true)
