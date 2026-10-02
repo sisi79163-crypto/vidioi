@@ -22,11 +22,12 @@ sleep 3
 xcrun simctl io "$DEVICE" screenshot build/screenshots/editor.png
 cp "$APP_DATA/Documents/smoke-result.json" build/screenshots/render-result.json
 python3 - "$APP_DATA/Documents/smoke-result.json" <<'PY'
-import json,sys,os
+import json,sys,os,shutil
 result=json.load(open(sys.argv[1]))
 print(result)
 assert result['success'],result.get('error')
 assert os.path.getsize(result['path'])>1000
+shutil.copyfile(result['path'],'build/screenshots/smoke-export.mp4')
 PY
 xcrun simctl terminate "$DEVICE" com.mostafa.vidioi
 xcrun simctl launch "$DEVICE" com.mostafa.vidioi --screenshot-editor --screenshot-motion

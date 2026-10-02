@@ -69,11 +69,13 @@ struct MediaThumbnail: View {
     var symbol = "film"
     @State private var image: UIImage?
     var body: some View {
-        ZStack {
-            VTheme.elevated
-            if let image { Image(uiImage: image).resizable().scaledToFill() }
-            else { Image(systemName: symbol).font(.system(size: 24, weight: .light)).foregroundStyle(VTheme.muted.opacity(0.5)) }
-        }.clipped().task(id: url) {
+        GeometryReader { geometry in
+            ZStack {
+                VTheme.elevated
+                if let image { Image(uiImage: image).resizable().scaledToFill() }
+                else { Image(systemName: symbol).font(.system(size: 24, weight: .light)).foregroundStyle(VTheme.muted.opacity(0.5)) }
+            }.frame(width:geometry.size.width,height:geometry.size.height).clipped()
+        }.task(id: url) {
             image = nil
             guard let url else { return }
             if ["jpg","jpeg","png","heic","webp"].contains(url.pathExtension.lowercased()) {
