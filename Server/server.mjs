@@ -44,9 +44,10 @@ export function createGateway({ token, key, model = 'gpt-6-astra', provider = op
   }
   const server = http.createServer(async (req, res) => {
     if (req.url === '/health' && req.method === 'GET') return send(res, 200, { ok: true });
-    if (req.url !== '/v1/edit' || req.method !== 'POST') return send(res, 404, { error: 'Not found' });
+    if (!((req.url === '/v1/edit' && req.method === 'POST') || (req.url === '/v1/status' && req.method === 'GET'))) return send(res, 404, { error: 'Not found' });
     const candidate = Buffer.from((req.headers.authorization ?? '').replace(/^Bearer /, ''));
     if (candidate.length !== secret.length || !timingSafeEqual(candidate, secret)) return send(res, 401, { error: 'Unauthorized' });
+    if (req.url === '/v1/status') return send(res, 200, { aiConfigured: Boolean(key), model });
     if (!req.headers['content-type']?.startsWith('application/json')) return send(res, 415, { error: 'Use application/json' });
     if (Date.now() - windowStart >= 60000) { windowStart = Date.now(); count = 0; }
     if (++count > perMinute || active >= 2) return send(res, 429, { error: 'Too many requests' });

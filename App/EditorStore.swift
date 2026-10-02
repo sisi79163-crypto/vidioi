@@ -7,6 +7,8 @@ struct ProjectEntry: Identifiable {
     let id: UUID
     let title: String
     let updated: Date
+    let duration: Double
+    let coverURL: URL?
 }
 @MainActor final class EditorStore: ObservableObject {
     @Published var project = EditProject()
@@ -26,6 +28,7 @@ struct ProjectEntry: Identifiable {
     private var previewTask: Task<Void, Never>?
     private var observer: Any?
     private var revision = 0
+    private var sourceDurations: [String: Double] = [:]
     private let root: URL
     var directory: URL { root.appendingPathComponent(project.id.uuidString, isDirectory: true) }
     var assets: URL { directory.appendingPathComponent("Assets", isDirectory: true) }
@@ -49,7 +52,8 @@ struct ProjectEntry: Identifiable {
             guard let data = try? Data(contentsOf: folder.appendingPathComponent("project.json")),
                   let p = try? JSONDecoder().decode(EditProject.self, from: data) else { return nil }
             let date = (try? folder.appendingPathComponent("project.json").resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
-            return ProjectEntry(id: p.id, title: p.title, updated: date)
+            let cover = p.clips.first { $0.kind == .video || $0.kind == .image }.flatMap { $0.asset }.map { folder.appendingPathComponent("Assets").appendingPathComponent($0) }
+            return ProjectEntry(id: p.id, title: p.title, updated: date, duration: p.length, coverURL: cover)
         }.sorted { $0.updated > $1.updated }
     }
     func newProject() {
@@ -194,6 +198,7 @@ struct ProjectEntry: Identifiable {
                     let duration = try await AVURLAsset(url: destination).load(.duration).seconds
                     guard duration.isFinite, duration >= 0.05 else { throw EditError.invalid("ملف بلا مدة صالحة") }
                     c.duration = duration
+                    sourceDurations[name] = duration
                 }
                 if kind == .video { c.start = next.clips.filter { $0.kind == .video && $0.lane == 0 }.map(\.end).max() ?? 0 }
                 else { c.start = playhead; c.lane = kind == .audio ? 1 : 2 }
@@ -237,6 +242,48 @@ struct ProjectEntry: Identifiable {
             try await RenderEngine.export(product, to: output, highResolution: max(project.width, project.height) > 1920)
             exportURL = output
         } catch { self.error = error.localizedDescription }
+    }
+    func moveClip(_ id: UUID, to time: Double) {
+        change { p in if let i=p.clips.firstIndex(where:{$0.id==id}) {p.clips[i].start=time} }
+    }
+    func trimClip(_ id: UUID, leading: Bool, delta: Double) {
+        change { p in
+            guard let i=p.clips.firstIndex(where:{$0.id==id}) else{return}
+            var c=p.clips[i]
+            if leading {
+                let shift=min(c.duration-0.05,max(-c.start,max(-c.sourceIn/c.speed,delta)))
+                c.start += shift;c.sourceIn += shift*c.speed;c.duration -= shift
+                c.keys=c.keys.compactMap { key in var k=key;k.time -= shift;return k.time>=0 && k.time<=c.duration ? k:nil }
+            } else {
+                var limit=3600-c.start
+                if let asset=c.asset,let source=sourceDurations[asset] {limit=min(limit,(source-c.sourceIn)/c.speed)}
+                c.duration=max(0.05,min(limit,c.duration+delta));c.keys.removeAll {$0.time>c.duration}
+            }
+            p.clips[i]=c
+        }
+    }
+    func setSelectedSpeed(_ speed:Double) {
+        guard (0.25...4).contains(speed) else{return}
+        updateSelected { c in let factor=c.speed/speed;c.duration *= factor;c.keys=c.keys.map {k in var next=k;next.time *= factor;return next};c.speed=speed }
+    }
+    func loadShowcase() {
+        // CI-only deterministic project used for screenshots and render smoke tests.
+        guard ProcessInfo.processInfo.arguments.contains("--screenshot-editor") else{return}
+        newProject()
+        let size=CGSize(width:720,height:1280)
+        let image=UIGraphicsImageRenderer(size:size).image { ctx in
+            let colors=[UIColor(red:0.10,green:0.25,blue:0.26,alpha:1).cgColor,UIColor(red:0.015,green:0.07,blue:0.09,alpha:1).cgColor] as CFArray
+            if let gradient=CGGradient(colorsSpace:CGColorSpaceCreateDeviceRGB(),colors:colors,locations:[0,1]) {ctx.cgContext.drawLinearGradient(gradient,start:.zero,end:CGPoint(x:720,y:1280),options:[])}
+            UIColor(red:0.78,green:0.97,blue:0.48,alpha:1).setFill();UIBezierPath(ovalIn:CGRect(x:320,y:140,width:260,height:260)).fill()
+            UIColor(red:0.06,green:0.17,blue:0.18,alpha:1).setFill()
+            let path=UIBezierPath();path.move(to:CGPoint(x:0,y:800));path.addLine(to:CGPoint(x:320,y:470));path.addLine(to:CGPoint(x:720,y:980));path.addLine(to:CGPoint(x:720,y:1280));path.addLine(to:CGPoint(x:0,y:1280));path.close();path.fill()
+        }
+        if let data=image.jpegData(compressionQuality:0.9) {try? data.write(to:assets.appendingPathComponent("showcase.jpg"))}
+        var backdrop=Clip(kind:.image,name:"Visual study",asset:"showcase.jpg");backdrop.duration=12
+        var title=Clip(kind:.text,name:"كل لحظة تستحق");title.text="كل لحظة\nتستحق";title.start=0;title.duration=8;title.lane=1;title.style.fontSize=110;title.style.y=0.56;title.style.motion = .pop
+        var sub=Clip(kind:.text,name:"اصنع قصتك");sub.text="اصنع قصتك بطريقتك";sub.start=0.5;sub.duration=6;sub.lane=2;sub.style.fontSize=42;sub.style.y=0.72;sub.style.color="#C6FA73"
+        change {$0.title="لحظات تستحق";$0.clips=[backdrop,title,sub]}
+        selected=title.id;seek(1.5)
     }
     func projectJSON() -> URL { directory.appendingPathComponent("project.json") }
 }

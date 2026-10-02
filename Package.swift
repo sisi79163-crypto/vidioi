@@ -2,6 +2,7 @@
 import PackageDescription
 let package = Package(
     name: "VidioiCore",
+    platforms: [.macOS(.v12), .iOS(.v17)],
     products: [.library(name: "VidioiCore", targets: ["VidioiCore"])],
     targets: [
         .target(name: "VidioiCore", path: "Core"),

@@ -41,3 +41,18 @@ jobs:
           path: build/vidioi-unsigned.ipa
           if-no-files-found: error
           retention-days: 14
+
+      - name: Build iPhone simulator app
+        run: >-
+          xcodebuild -project vidioi.xcodeproj -scheme vidioi
+          -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator'
+          -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
+      - name: Launch UI and smoke-test export
+        run: bash scripts/simulator_smoke.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: vidioi-ui-smoke
+          path: build/screenshots
+          if-no-files-found: warn
+          retention-days: 14

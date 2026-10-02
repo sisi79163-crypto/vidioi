@@ -40,3 +40,38 @@ enum SecureSettings {
         guard SecItemAdd(item as CFDictionary, nil) == errSecSuccess else { throw EditError.invalid("تعذّر حفظ رمز الاتصال") }
     }
 }
+
+extension AIClient {
+    static func chatGPT(prompt:String,project:EditProject,model:String,accessToken:String) async throws -> EditPlan {
+        var request=URLRequest(url:URL(string:"https://api.openai.com/v1/responses")!)
+        request.httpMethod="POST";request.timeoutInterval=180
+        request.setValue("Bearer \(accessToken)",forHTTPHeaderField:"Authorization")
+        request.setValue("application/json",forHTTPHeaderField:"Content-Type")
+        request.setValue("text/event-stream",forHTTPHeaderField:"Accept")
+        request.httpBody=try AIContract.request(prompt:prompt,project:project,model:model)
+        let (bytes,response)=try await URLSession.shared.bytes(for:request)
+        guard let status=(response as? HTTPURLResponse)?.statusCode,status==200 else {
+            let status=(response as? HTTPURLResponse)?.statusCode ?? 0
+            if status==401 {throw EditError.invalid("انتهى تفويض ChatGPT. أعد تسجيل الدخول.")}
+            if status==429 {throw EditError.invalid("وصل الحساب إلى حد الاستخدام. أعد المحاولة لاحقًا.")}
+            throw EditError.invalid("تعذّر الاتصال بـ ChatGPT (\(status))")
+        }
+        var stream=ResponseAccumulator();var size=0
+        for try await line in bytes.lines {
+            try Task.checkCancellation();size += line.utf8.count
+            guard size<=2_000_000 else {throw EditError.invalid("استجابة AI كبيرة جدًا")}
+            try stream.consume(line)
+        }
+        return try stream.plan(for:project)
+    }
+    static func testGateway(endpoint:String,token:String) async throws -> String {
+        guard let base=URL(string:endpoint),base.scheme=="https",base.host != nil,!token.isEmpty else {throw EditError.invalid("أدخل رابط HTTPS ورمز الاتصال")}
+        var request=URLRequest(url:base.appendingPathComponent("v1/status"));request.timeoutInterval=20
+        request.setValue("Bearer \(token)",forHTTPHeaderField:"Authorization")
+        let (data,response)=try await URLSession.shared.data(for:request)
+        guard (response as? HTTPURLResponse)?.statusCode==200,
+              let json=try JSONSerialization.jsonObject(with:data) as? [String:Any] else {throw EditError.invalid("فشل اختبار الخادم أو رمز الاتصال")}
+        guard json["aiConfigured"] as? Bool==true else {throw EditError.invalid("الخادم متصل لكن مفتاح OpenAI غير مضبوط")}
+        return "الخادم جاهز · \(json["model"] as? String ?? "OpenAI")"
+    }
+}

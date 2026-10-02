@@ -39,7 +39,7 @@ def main():
             'TARGETED_DEVICE_FAMILY': '1,2', 'SUPPORTED_PLATFORMS': 'iphoneos iphonesimulator',
             'ASSETCATALOG_COMPILER_APPICON_NAME': 'AppIcon', 'CODE_SIGN_STYLE': 'Automatic',
             'LD_RUNPATH_SEARCH_PATHS': '$(inherited) @executable_path/Frameworks',
-            'SWIFT_EMIT_LOC_STRINGS': 'YES', 'CURRENT_PROJECT_VERSION': '1', 'MARKETING_VERSION': '0.1.0'
+            'SWIFT_EMIT_LOC_STRINGS': 'YES', 'CURRENT_PROJECT_VERSION': '2', 'MARKETING_VERSION': '0.2.0'
         }
         for prefix, settings in [('project', project_settings), ('app', app_settings)]:
             body = ' '.join(f'{key} = {quoted(value)};' for key, value in settings.items())
